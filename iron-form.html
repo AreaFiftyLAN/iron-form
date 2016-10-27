@@ -156,6 +156,16 @@ attach it to the `<iron-form>`:
       _init: function() {
         this._form.addEventListener('submit', this.submit.bind(this));
         this._form.addEventListener('reset', this.reset.bind(this));
+
+        var nodes = Polymer.dom(this._form).querySelectorAll('*');
+        this._defaults = new WeakMap();
+        for (var i = 0; i < nodes.length; i++) {
+          var node = nodes[i];
+          this._defaults.set(node, {
+            checked: nodes[i].checked,
+            value: nodes[i].value,
+          });
+        }
       },
 
       /**
@@ -226,8 +236,11 @@ attach it to the `<iron-form>`:
         var nodes = Polymer.dom(this._form).querySelectorAll('*');
 
         for (var i = 0; i < nodes.length; i++) {
-          if (nodes[i].defaultValue) {
-            nodes[i].value = nodes[i].defaultValue;
+          var node = nodes[i];
+          if (this._defaults.has(node)) {
+            var defaults = this._defaults.get(node);
+            node.value = defaults.value;
+            node.checked = defaults.checked;
           }
         }
       },
