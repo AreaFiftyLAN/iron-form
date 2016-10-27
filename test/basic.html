@@ -120,13 +120,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         <iron-form id="custom-required">
           <form action="/get" method="get">
-            <iron-input required></iron-input>
+            <iron-input><input required /></iron-input>
           </form>
         </iron-form>
 
         <iron-form id="custom-invalid">
           <form action="/get" method="get">
-            <iron-input pattern="aa" bind-value="b"></iron-input>
+            <iron-input bind-value="b"><input pattern="aa" /></iron-input>
           </form>
         </iron-form>
       </div>
