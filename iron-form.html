@@ -157,7 +157,7 @@ attach it to the `<iron-form>`:
         this._form.addEventListener('submit', this.submit.bind(this));
         this._form.addEventListener('reset', this.reset.bind(this));
 
-        var nodes = Polymer.dom(this._form).querySelectorAll('*');
+        var nodes = this._getFormElements();
         this._defaults = new WeakMap();
         for (var i = 0; i < nodes.length; i++) {
           var node = nodes[i];
@@ -233,7 +233,7 @@ attach it to the `<iron-form>`:
         if (event)
           event.preventDefault();
 
-        var nodes = Polymer.dom(this._form).querySelectorAll('*');
+        var nodes = this._getFormElements();
 
         for (var i = 0; i < nodes.length; i++) {
           var node = nodes[i];
@@ -303,7 +303,7 @@ attach it to the `<iron-form>`:
       },
 
       _getValidatableElements: function() {
-        var nodes = Polymer.dom(this._form).querySelectorAll('*');
+        var nodes = this._getFormElements();
         var validatable = [];
 
         for (var i = 0; i < nodes.length; i++) {
@@ -325,8 +325,27 @@ attach it to the `<iron-form>`:
         return validatable;
       },
 
+      _getFormElements: function(root) {
+        if (!root) root = this._form;
+        var nodes = Polymer.dom(root).querySelectorAll('*');
+        var result = [];
+        for (var i = 0; i < nodes.length; i++) {
+          var el = nodes[i];
+          if (el.tagName === "SLOT") {
+            var distributed = Polymer.dom(el).getDistributedNodes();
+            for (var i = 0; i < distributed.length; i++) {
+              var additionalElements = this._getFormElements(distributed[i]);
+              result.push.apply(result, additionalElements);
+            }
+          } else {
+            result.push(el);
+          }
+        }
+        return result;
+      },
+
       _getSubmittableElements: function() {
-        var nodes = Polymer.dom(this._form).querySelectorAll('*');
+        var nodes = this._getFormElements();
         var submittable = [];
 
         // handle <iron-input><input /></iron-input> scenario
