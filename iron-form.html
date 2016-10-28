@@ -267,20 +267,22 @@ event and do your own custom submission:
           rootSlot.addEventListener('slotchange', rootSlot.__formListener);
         }
         var result = [];
+        var addElement = el => {
+          if (el.tagName === "SLOT") {
+            var additionalElements = this._getFormElements(el);
+            result.push.apply(result, additionalElements);
+          } else {
+            result.push(el);
+          }
+        };
         var roots = rootSlot.assignedNodes()
                             .filter(n => n.nodeType === Node.ELEMENT_NODE);
         for (var rootNo = 0; rootNo < roots.length; rootNo++) {
           var root = roots[rootNo];
+          addElement(root);
           var nodes = root.querySelectorAll('*');
-          nodes.push(root);
           for (var nodeNo = 0; nodeNo < nodes.length; nodeNo++) {
-            var el = nodes[nodeNo];
-            if (el.tagName === "SLOT") {
-              var additionalElements = this._getFormElements(el);
-              result.push.apply(result, additionalElements);
-            } else {
-              result.push(el);
-            }
+            addElement(nodes[nodeNo]);
           }
         }
         return result;
