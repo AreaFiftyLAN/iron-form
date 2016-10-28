@@ -12,21 +12,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../iron-ajax/iron-ajax.html">
 
 <!--
-`<iron-form>` is a wrapper around the HTML `<form>` element, that can
+`<iron-form>` is an alternative to the HTML `<form>` element, that can
 validate and submit both custom and native HTML elements.
-
-It has two modes: if `redirect` is true, then after the form submission you
-will be redirected to the server response. Otherwise, if it is false, it will
-use an `iron-ajax` element to submit the form contents to the server.
 
   Example:
 
-    <iron-form>
-      <form method="get" action="/form/handler">
-        <input type="text" name="name" value="Batman">
-        <input type="checkbox" name="donuts" checked> I like donuts<br>
-        <paper-checkbox name="cheese" value="yes" checked></paper-checkbox>
-      </form>
+    <iron-form method="get" url="/form/handler">
+      <input type="text" name="name" value="Batman">
+      <input type="checkbox" name="donuts" checked> I like donuts<br>
+      <paper-checkbox name="cheese" value="yes" checked></paper-checkbox>
     </iron-form>
 
 By default, a native `<button>` element will submit this form. However, if you
@@ -62,16 +56,6 @@ event and do your own custom submission:
       firebase.set(form.serialize());
     });
 
-Note that if you're dynamically creating this element, it's mandatory that you
-first create the contained `<form>` element and all its children, and only then
-attach it to the `<iron-form>`:
-
-  var wrapper = document.createElement('iron-form');
-  var form = document.createElement('form');
-  var input = document.createElement('input');
-  form.appendChild(input);
-  wrapper.appendChild(form);
-
 @element iron-form
 @hero hero.svg
 @demo demo/index.html
@@ -86,69 +70,31 @@ attach it to the `<iron-form>`:
     </style>
 
     <!-- This form is used to collect the elements that should be submitted -->
-    <slot id="content"></slot>
-
-    <!-- This form is used for submission -->
-    <form id="helper" action$="[[action]]" method$="[[method]]" enctype$="[[contentType]]"></form>
+    <form id="form">
+      <slot id="slot"></slot>
+    </form>
   </template>
 
   <script>
-    Polymer({
-      is: 'iron-form',
-
-      properties: {
-        /*
-         * Set this to true if you don't want the form to be submitted through an
-         * ajax request, and you want the page to redirect to the action URL
-         * after the form has been submitted.
-         */
-        allowRedirect: {
-          type: Boolean,
-          value: false
-        },
-        /**
-         * Content type to use when sending data. If the `contentType` property
-         * is set and a `Content-Type` header is specified in the `headers`
-         * property, the `headers` property value will take precedence.
-         * If Content-Type is set to a value listed below, then
-         * the `body` (typically used with POST requests) will be encoded accordingly.
-         *
-         *    * `content-type="application/json"`
-         *      * body is encoded like `{"foo":"bar baz","x":1}`
-         *    * `content-type="application/x-www-form-urlencoded"`
-         *      * body is encoded like `foo=bar+baz&x=1`
-         */
-        contentType: {
-          type: String,
-          value: "application/x-www-form-urlencoded"
-        },
-        /**
-         * HTTP request headers to send.
-         *
-         * Note: setting a `Content-Type` header here will override the value
-         * specified by the `contentType` property of this element.
-         */
-        headers: {
-          type: Object,
-          value: function() {
-            return {};
-          }
-        },
-        /**
-         * Set the withCredentials flag when sending data.
-         */
-        withCredentials: {
-          type: Boolean,
-          value: false
-        },
-        /**
-         * Setting to true skips validation before submit
-         */
-        novalidate: {
-          type: Boolean,
-          value: false,
-        },
-      },
+    class IronForm extends customElements.get('iron-ajax') {
+      static get is() { return 'iron-form'; }
+      static get config() {
+        return {
+          properties: {
+            /**
+             * Setting to true skips validation before submit
+             */
+            novalidate: {
+              type: Boolean,
+              value: false,
+            },
+          },
+          listeners: {
+            response: '_handleFormResponse',
+            error: '_handleFormError'
+          },
+        }
+      }
 
       /**
        * Fired after the form is submitted.
@@ -176,50 +122,39 @@ attach it to the `<iron-form>`:
        * @event iron-form-error
       */
 
-      attached: function() {
-        this._nodeObserver = Polymer.dom(this.$.content).observeNodes(
-          function(mutations) {
-            for (var i = 0; i < mutations.addedNodes.length; i++) {
-              if (mutations.addedNodes[i].tagName === 'FORM') {
-                this._form = mutations.addedNodes[i];
-                this._init();
-              }
-            }
-          }.bind(this));
-      },
+      connectedCallback() {
+        super.connectedCallback();
+        this.$.form.addEventListener('submit', this.submit.bind(this));
+        this.$.form.addEventListener('reset', this.reset.bind(this));
 
-      detached: function() {
-        if (this._nodeObserver) {
-          Polymer.dom(this.$.content).unobserveNodes(this._nodeObserver);
-          this._nodeObserver = null;
-        }
-      },
+        // saves default values
+        this._getFormElements();
+        this.fire('iron-form-ready');
+      }
 
-      _init: function() {
-        this._form.addEventListener('submit', this.submit.bind(this));
-        this._form.addEventListener('reset', this.reset.bind(this));
-
-        var nodes = this._getFormElements();
-        this._defaults = new WeakMap();
+      _saveDefaultValues(root) {
+        var nodes = this._getFormElements(root);
+        this._defaults = this._defaults || new WeakMap();
         for (var i = 0; i < nodes.length; i++) {
           var node = nodes[i];
-          this._defaults.set(node, {
-            checked: nodes[i].checked,
-            value: nodes[i].value,
-          });
+          if (!this._defaults.has(node)) {
+            this._defaults.set(node, {
+              checked: nodes[i].checked,
+              value: nodes[i].value,
+            });
+          }
         }
-      },
+      }
 
       /**
        * Validates all the required elements (custom and native) in the form.
        * @return {boolean} True if all the elements are valid.
        */
-      validate: function() {
-        if (this.novalidate)
-          return true;
+      validate() {
+        if (this.novalidate) return true;
 
         // Start by making the form check the native elements it knows about.
-        var valid = this._form.checkValidity();
+        if (!this.$.form.checkValidity()) return false;
         var elements = this._getValidatableElements();
 
         // Go through all the elements, and validate the custom ones.
@@ -227,17 +162,17 @@ attach it to the `<iron-form>`:
           // This is weird to appease the compiler. We assume the custom element
           // has a validate() method, otherwise we can't check it.
           var validatable = /** @type {{validate: (function() : boolean)}} */ (el);
-          if (validatable.validate) {
-            valid = !!validatable.validate() && valid;
+          if (validatable.validate && !validatable.validate()) {
+             return false;
           }
         }
-        return valid;
-      },
+        return true;
+      }
 
       /**
        * Submits the form.
        */
-      submit: function(event) {
+      submit(event) {
         // We are not using this form for submission, so always cancel its event.
         if (event)
           event.preventDefault();
@@ -246,31 +181,14 @@ attach it to the `<iron-form>`:
           return;
         }
 
-        // Remove any existing children in the submission form (from a previous submit).
-        while (this.$.helper.children.length !== 0) {
-          this.$.helper.removeChild(this.$.helper.children[0]);
-        }
-
         var json = this.serializeForm();
-
-        // If we want a redirect, submit the form natively.
-        if (this.allowRedirect) {
-          // If we're submitting the form natively, then create a hidden element for
-          // each of the values.
-          for (element in json) {
-            this.$.helper.appendChild(this._createHiddenElement(element, json[element]));
-          }
-          this.$.helper.submit();
-          this.fire('iron-form-submit');
-        } else {
-          this._makeAjaxRequest(json);
-        }
-      },
+        this._makeAjaxRequest(json);
+      }
 
       /**
        * Resets the form to the default values.
        */
-      reset: function(event) {
+      reset(event) {
         // We are not using this form for submission, so always cancel its event.
         if (event)
           event.preventDefault();
@@ -285,14 +203,14 @@ attach it to the `<iron-form>`:
             node.checked = defaults.checked;
           }
         }
-      },
+      }
 
       /**
        * Serializes the form as will be used in submission.
        * @return {Object} An object containing name-value pairs for elements that
        *                  would be submitted.
        */
-      serializeForm: function() {
+      serializeForm() {
         // Only elements that have a `name` and are not disabled are submittable.
         var elements = this._getSubmittableElements();
         var json = {};
@@ -303,48 +221,32 @@ attach it to the `<iron-form>`:
           }
         }
         return json;
-      },
+      }
 
-      _handleFormResponse: function (event) {
+      _handleFormResponse(event) {
         this.fire('iron-form-response', event.detail);
-      },
+      }
 
-      _handleFormError: function (event) {
+      _handleFormError(event) {
         this.fire('iron-form-error', event.detail);
-      },
+      }
 
-      _makeAjaxRequest: function(json) {
-        // Initialize the iron-ajax element if we haven't already.
-        if (!this.ajax) {
-          this.ajax = document.createElement('iron-ajax');
-          this.ajax.addEventListener('response', this._handleFormResponse.bind(this));
-          this.ajax.addEventListener('error', this._handleFormError.bind(this));
-        }
-
-        // Native forms can also index elements magically by their name (can't make
-        // this up if I tried) so we need to get the correct attributes, not the
-        // elements with those names.
-        this.ajax.url = this._form.getAttribute('action');
-        this.ajax.method = this._form.getAttribute('method');
-        this.ajax.contentType = this.contentType;
-        this.ajax.withCredentials = this.withCredentials;
-        this.ajax.headers = this.headers;
-
-        if (this._form.method.toUpperCase() === 'POST') {
-          this.ajax.body = json;
+      _makeAjaxRequest(json) {
+        if (this.method.toUpperCase() === 'GET') {
+          this.params = json;
         } else {
-          this.ajax.params = json;
+          this.body = json;
         }
 
         // Allow for a presubmit hook
         var event = this.fire('iron-form-presubmit', {}, {cancelable: true});
         if(!event.defaultPrevented) {
-          var req = this.ajax.generateRequest();
+          this.generateRequest();
           this.fire('iron-form-submit', json);
         }
-      },
+      }
 
-      _getValidatableElements: function() {
+      _getValidatableElements() {
         var nodes = this._getFormElements();
         var validatable = [];
 
@@ -355,28 +257,36 @@ attach it to the `<iron-form>`:
           }
         }
         return validatable;
-      },
+      }
 
-      _getFormElements: function(root) {
-        if (!root) root = this._form;
-        var nodes = Polymer.dom(root).querySelectorAll('*');
+      _getFormElements(rootSlot) {
+        if (!rootSlot) rootSlot = this.$.slot;
+        if (!rootSlot.__formListener) {
+          rootSlot.__formListener = () => this._saveDefaultValues(rootSlot);
+          rootSlot.__formListener();
+          rootSlot.addEventListener('slotchange', rootSlot.__formListener);
+        }
         var result = [];
-        for (var i = 0; i < nodes.length; i++) {
-          var el = nodes[i];
-          if (el.tagName === "SLOT") {
-            var distributed = Polymer.dom(el).getDistributedNodes();
-            for (var j = 0; j < distributed.length; j++) {
-              var additionalElements = this._getFormElements(distributed[j]);
+        var roots = rootSlot.assignedNodes()
+                            .filter(n => n.nodeType === Node.ELEMENT_NODE);
+        for (var rootNo = 0; rootNo < roots.length; rootNo++) {
+          var root = roots[rootNo];
+          var nodes = root.querySelectorAll('*');
+          nodes.push(root);
+          for (var nodeNo = 0; nodeNo < nodes.length; nodeNo++) {
+            var el = nodes[nodeNo];
+            if (el.tagName === "SLOT") {
+              var additionalElements = this._getFormElements(el);
               result.push.apply(result, additionalElements);
+            } else {
+              result.push(el);
             }
-          } else {
-            result.push(el);
           }
         }
         return result;
-      },
+      }
 
-      _getSubmittableElements: function() {
+      _getSubmittableElements() {
         var nodes = this._getFormElements();
         var submittable = [];
 
@@ -414,9 +324,9 @@ attach it to the `<iron-form>`:
           }
         }
         return submittable;
-      },
+      }
 
-      _serializeElementValues: function(element) {
+      _serializeElementValues(element) {
         // We will assume that every custom element that needs to be serialized
         // has a `value` property, and it contains the correct value.
         // The only weird one is an element that implements IronCheckedElementBehaviour,
@@ -461,9 +371,9 @@ attach it to the `<iron-form>`:
             return [];
           return [element.value];
         }
-      },
+      }
 
-      _serializeSelectValues: function(element) {
+      _serializeSelectValues(element) {
         var values = [];
 
         // A <select multiple> has an array of options, some of which can be selected.
@@ -473,9 +383,9 @@ attach it to the `<iron-form>`:
           }
         }
         return values;
-      },
+      }
 
-      _serializeInputValues: function(element) {
+      _serializeInputValues(element) {
         // Most of the inputs use their 'value' attribute, with the exception
         // of radio buttons, checkboxes and file.
         var type = element.type.toLowerCase();
@@ -487,17 +397,9 @@ attach it to the `<iron-form>`:
           return [];
         }
         return [element.value];
-      },
+      }
 
-      _createHiddenElement: function(name, value) {
-        var input = document.createElement("input");
-        input.setAttribute("type", "hidden");
-        input.setAttribute("name", name);
-        input.setAttribute("value", value);
-        return input;
-      },
-
-      _addSerializedElement: function(json, name, value) {
+      _addSerializedElement(json, name, value) {
         // If the name doesn't exist, add it. Otherwise, serialize it to
         // an array,
         if (!json[name]) {
@@ -509,6 +411,7 @@ attach it to the `<iron-form>`:
           json[name].push(value);
         }
       }
-    });
+    }
+    customElements.define(IronForm.is, IronForm);
   </script>
 </dom-module>

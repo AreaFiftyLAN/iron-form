@@ -17,18 +17,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   <link rel="import" href="../../polymer/polymer.html">
   <link rel="import" href="../../paper-checkbox/paper-checkbox.html">
-  <link rel="import" href="../../iron-input/iron-input.html">
+  <link rel="import" href="../../paper-input/paper-input.html">
   <link rel="import" href="../iron-form.html">
 
 </head>
 <body>
   <dom-module id="slotted-form">
     <template>
-      <iron-form id="form">
-        <form action="/get" method="get">
-          <input name="original" value="works" />
-          <slot name="inputs"></slot>
-        </form>
+      <iron-form id="form" url="/get" method="get">
+        <input name="original" value="works" />
+        <slot name="inputs"></slot>
       </iron-form>
     </template>
     <script>
@@ -71,8 +69,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <input type="radio" name="radio2">
           <paper-checkbox name="papercheck1" checked></paper-checkbox>
           <paper-checkbox name="papercheck2"></paper-checkbox>
-          <iron-input bind-value="paper1"><input name="paper1" /></iron-input>
-          <iron-input bind-value=""><input name="paper2" /></iron-input>
+          <paper-input value="paper1" name="paper1"></paper-input>
+          <paper-input value="" name="paper2"></paper-input>
           <input type="reset">
         </div>
       </slotted-form>
@@ -115,7 +113,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             done();
           });
 
-          // Wait one tick for observeNodes.
+          // Wait slots to initialize
           Polymer.Base.async(function() {
             form.submit();
             server.respond();
@@ -133,7 +131,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             responses++;
           });
 
-          // Wait one tick for observeNodes.
+          // Wait slots to initialize
           Polymer.Base.async(function() {
             expect(form.validate()).to.be.equal(false);
             form.submit();
@@ -143,17 +141,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           setTimeout(function() {
             expect(responses).to.be.equal(0);
             done();
-          },  200);
+          }, 1);
         });
       });
     });
 
     suite('resetting', function() {
       var inputs;
-      setup(function() {
+      setup(function(done) {
         form = fixture('slotted-reset').$.form;
-        inputs = Polymer.dom(form.querySelector('slot')).getDistributedNodes()[0];
-      })
+        Polymer.Base.async(function() {
+          inputs = form.querySelector('slot').assignedNodes()[0];
+          done();
+        }, 1);
+      });
       test('can reset a form', function(done) {
         // Wait one tick for observeNodes.
         Polymer.Base.async(function() {
