@@ -89,7 +89,7 @@ attach it to the `<iron-form>`:
     <slot id="content"></slot>
 
     <!-- This form is used for submission -->
-    <form id="helper" action$="[[action]]" method$="[[method]]" enctype$="[[enctype]]"></form>
+    <form id="helper" action$="[[action]]" method$="[[method]]" enctype$="[[contentType]]"></form>
   </template>
 
   <script>
@@ -105,7 +105,42 @@ attach it to the `<iron-form>`:
         allowRedirect: {
           type: Boolean,
           value: false
-        }
+        },
+        /**
+         * Content type to use when sending data. If the `contentType` property
+         * is set and a `Content-Type` header is specified in the `headers`
+         * property, the `headers` property value will take precedence.
+         * If Content-Type is set to a value listed below, then
+         * the `body` (typically used with POST requests) will be encoded accordingly.
+         *
+         *    * `content-type="application/json"`
+         *      * body is encoded like `{"foo":"bar baz","x":1}`
+         *    * `content-type="application/x-www-form-urlencoded"`
+         *      * body is encoded like `foo=bar+baz&x=1`
+         */
+        contentType: {
+          type: String,
+          value: "application/x-www-form-urlencoded"
+        },
+        /**
+         * HTTP request headers to send.
+         *
+         * Note: setting a `Content-Type` header here will override the value
+         * specified by the `contentType` property of this element.
+         */
+        headers: {
+          type: Object,
+          value: function() {
+            return {};
+          }
+        },
+        /**
+         * Set the withCredentials flag when sending data.
+         */
+        withCredentials: {
+          type: Boolean,
+          value: false
+        },
       },
 
       /**
@@ -284,9 +319,9 @@ attach it to the `<iron-form>`:
         // elements with those names.
         this.ajax.url = this._form.getAttribute('action');
         this.ajax.method = this._form.getAttribute('method');
-        this.ajax.contentType = this._form.contentType;
-        //this.ajax.withCredentials = this.withCredentials;
-        //this.ajax.headers = this.headers;
+        this.ajax.contentType = this.contentType;
+        this.ajax.withCredentials = this.withCredentials;
+        this.ajax.headers = this.headers;
 
         if (this._form.method.toUpperCase() === 'POST') {
           this.ajax.body = json;
@@ -297,7 +332,7 @@ attach it to the `<iron-form>`:
         // Allow for a presubmit hook
         var event = this.fire('iron-form-presubmit', {}, {cancelable: true});
         if(!event.defaultPrevented) {
-          this.ajax.generateRequest();
+          var req = this.ajax.generateRequest();
           this.fire('iron-form-submit', json);
         }
       },

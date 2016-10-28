@@ -464,6 +464,27 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         }, 1);
       });
 
+      test('content-type and headers works', function(done) {
+        form.addEventListener('iron-form-response', function(event) {
+          var xhr = event.detail.xhr;
+          expect(xhr.withCredentials).to.be.true;
+          var headers = xhr.requestHeaders;
+          expect(headers['content-type']).to.be.equal('application/json');
+          expect(headers['x-some']).to.be.equal('header-value');
+          done();
+        });
+
+         form.contentType = 'application/json';
+         form.headers = {'x-some': 'header-value'};
+         form.withCredentials = true;
+
+        // Wait one tick for observeNodes.
+        Polymer.Base.async(function() {
+          form.submit();
+          server.respond();
+        }, 1);
+      });
+
       test('pressing an <input type=submit> submits the form', function(done) {
         form.addEventListener('iron-form-response', function(event) {
           expect(event.detail.response.success).to.be.equal(true);
