@@ -163,11 +163,7 @@ event and do your own custom submission:
       /**
        * Submits the form.
        */
-      submit(event) {
-        // We are not using this form for submission, so always cancel its event.
-        if (event)
-          event.preventDefault();
-
+      submit() {
         if (!this.validate()) {
           return;
         }
@@ -179,11 +175,7 @@ event and do your own custom submission:
       /**
        * Resets the form to the default values.
        */
-      reset(event) {
-        // We are not using this form for submission, so always cancel its event.
-        if (event)
-          event.preventDefault();
-
+      reset() {
         var nodes = this._getFormElements();
 
         for (var i = 0; i < nodes.length; i++) {
