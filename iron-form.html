@@ -127,8 +127,7 @@ event and do your own custom submission:
         this.$.form.addEventListener('submit', this.submit.bind(this));
         this.$.form.addEventListener('reset', this.reset.bind(this));
 
-        // saves default values
-        this._getFormElements();
+        this._saveDefaultValues();
         this.fire('iron-form-ready');
       }
 
