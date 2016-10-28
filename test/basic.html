@@ -330,6 +330,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         // Wait one tick for observeNodes.
         Polymer.Base.async(function() {
+          debugger;
           expect(form.validate()).to.be.equal(false);
           form.submit();
           server.respond();

@@ -69,10 +69,7 @@ event and do your own custom submission:
       }
     </style>
 
-    <!-- This form is used to collect the elements that should be submitted -->
-    <form id="form">
-      <slot id="slot"></slot>
-    </form>
+    <slot id="slot"></slot>
   </template>
 
   <script>
@@ -91,7 +88,8 @@ event and do your own custom submission:
           },
           listeners: {
             response: '_handleFormResponse',
-            error: '_handleFormError'
+            error: '_handleFormError',
+            tap: '_handleTap',
           },
         }
       }
@@ -124,9 +122,6 @@ event and do your own custom submission:
 
       connectedCallback() {
         super.connectedCallback();
-        this.$.form.addEventListener('submit', this.submit.bind(this));
-        this.$.form.addEventListener('reset', this.reset.bind(this));
-
         this._saveDefaultValues();
         this.fire('iron-form-ready');
       }
@@ -152,16 +147,13 @@ event and do your own custom submission:
       validate() {
         if (this.novalidate) return true;
 
-        // Start by making the form check the native elements it knows about.
-        if (!this.$.form.checkValidity()) return false;
         var elements = this._getValidatableElements();
 
         // Go through all the elements, and validate the custom ones.
         for (var el, i = 0; el = elements[i], i < elements.length; i++) {
-          // This is weird to appease the compiler. We assume the custom element
-          // has a validate() method, otherwise we can't check it.
-          var validatable = /** @type {{validate: (function() : boolean)}} */ (el);
-          if (validatable.validate && !validatable.validate()) {
+          var nativeValid = !el.checkValidity || el.checkValidity();
+          var polymerValid = !el.validate || el.validate();
+          if (!nativeValid || !polymerValid) {
              return false;
           }
         }
@@ -228,6 +220,12 @@ event and do your own custom submission:
 
       _handleFormError(event) {
         this.fire('iron-form-error', event.detail);
+      }
+
+      _handleTap(event) {
+        if (event.target.getAttribute("type") === "submit") {
+          this.submit()
+        }
       }
 
       _makeAjaxRequest(json) {
