@@ -12,50 +12,51 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../iron-ajax/iron-ajax.html">
 
 <!--
-`<iron-form>` is an alternative to the HTML `<form>` element, that can
+`<iron-form>` is a wrapper around the HTML `<form>` element, that can
 validate and submit both custom and native HTML elements.
-
+It has two modes: if `redirect` is true, then after the form submission you
+will be redirected to the server response. Otherwise, if it is false, it will
+use an `iron-ajax` element to submit the form contents to the server.
   Example:
-
-    <iron-form method="get" url="/form/handler">
-      <input type="text" name="name" value="Batman">
-      <input type="checkbox" name="donuts" checked> I like donuts<br>
-      <paper-checkbox name="cheese" value="yes" checked></paper-checkbox>
+    <iron-form>
+      <form method="get" action="/form/handler">
+        <input type="text" name="name" value="Batman">
+        <input type="checkbox" name="donuts" checked> I like donuts<br>
+        <paper-checkbox name="cheese" value="yes" checked></paper-checkbox>
+      </form>
     </iron-form>
-
 By default, a native `<button>` element will submit this form. However, if you
 want to submit it from a custom element's click handler, you need to explicitly
 call the `iron-form`'s `submit` method.
-
   Example:
-
     <paper-button raised onclick="submitForm()">Submit</paper-button>
-
     function submitForm() {
       document.getElementById('iron-form').submit();
     }
-
 If you are not using the `redirect` mode, then you also have the option of
 customizing the request sent to the server. To do so, you can listen to the `iron-form-presubmit`
 event, and modify the form's[`iron-ajax`](https://elements.polymer-project.org/elements/iron-ajax)
 object. However, If you want to not use `iron-ajax` at all, you can cancel the
 event and do your own custom submission:
-
   Example of modifying the request, but still using the build-in form submission:
-
     form.addEventListener('iron-form-presubmit', function() {
       this.request.method = 'put';
       this.request.params['extraParam'] = 'someValue';
     });
-
   Example of bypassing the build-in form submission:
-
     form.addEventListener('iron-form-presubmit', function(event) {
       event.preventDefault();
       var firebase = new Firebase(form.getAttribute('action'));
       firebase.set(form.serialize());
     });
-
+Note that if you're dynamically creating this element, it's mandatory that you
+first create the contained `<form>` element and all its children, and only then
+attach it to the `<iron-form>`:
+  var wrapper = document.createElement('iron-form');
+  var form = document.createElement('form');
+  var input = document.createElement('input');
+  form.appendChild(input);
+  wrapper.appendChild(form);
 @element iron-form
 @hero hero.svg
 @demo demo/index.html
@@ -69,30 +70,47 @@ event and do your own custom submission:
       }
     </style>
 
-    <slot id="slot"></slot>
+    <slot id="content"></slot>
+    <form id="helper" action$="[[action]]" method$="[[method]]" enctype$="[[enctype]]"></form>
   </template>
 
   <script>
-    class IronForm extends customElements.get('iron-ajax') {
-      static get is() { return 'iron-form'; }
-      static get config() {
-        return {
-          properties: {
-            /**
-             * Setting to true skips validation before submit
-             */
-            novalidate: {
-              type: Boolean,
-              value: false,
-            },
-          },
-          listeners: {
-            response: '_handleFormResponse',
-            error: '_handleFormError',
-            tap: '_handleTap',
-          },
-        }
-      }
+    Polymer({
+      is: 'iron-form',
+      properties: {
+        /*
+         * Set this to true if you don't want the form to be submitted through an
+         * ajax request, and you want the page to redirect to the action URL
+         * after the form has been submitted.
+         */
+        allowRedirect: {
+          type: Boolean,
+          value: false
+        },
+        /**
+         * HTTP request headers to send.
+         *
+         * Notes:
+         * - only works when `allowRedirect` is false.
+         * - setting a `Content-Type` header here will override the value
+         *   specified by the `contentType` property of this element.
+         */
+        headers: {
+          type: Object,
+          value: function() {
+            return {};
+          }
+        },
+        /**
+         * Set the withCredentials flag on the request.
+         *
+         * Note: Only works when `allowRedirect` is false.
+         */
+        withCredentials: {
+          type: Boolean,
+          value: false
+        },
+      },
 
       /**
        * Fired after the form is submitted.
@@ -120,14 +138,12 @@ event and do your own custom submission:
        * @event iron-form-error
       */
 
-      connectedCallback() {
-        super.connectedCallback();
+      attached: function() {
         this._saveDefaultValues();
-        this.fire('iron-form-ready');
-      }
+      },
 
-      _saveDefaultValues(root) {
-        var nodes = this._getFormElements(root);
+      _saveDefaultValues: function() {
+        var nodes = this._getFormElements();
         this._defaults = this._defaults || new WeakMap();
         for (var i = 0; i < nodes.length; i++) {
           var node = nodes[i];
@@ -138,44 +154,72 @@ event and do your own custom submission:
             });
           }
         }
-      }
+      },
 
       /**
        * Validates all the required elements (custom and native) in the form.
        * @return {boolean} True if all the elements are valid.
        */
-      validate() {
-        if (this.novalidate) return true;
+      validate: function() {
+        if (this._form.getAttribute('novalidate') === '')
+          return true;
 
+        // Start by making the form check the native elements it knows about.
+        var valid = this._form.checkValidity();
         var elements = this._getValidatableElements();
 
         // Go through all the elements, and validate the custom ones.
         for (var el, i = 0; el = elements[i], i < elements.length; i++) {
-          var nativeValid = !el.checkValidity || el.checkValidity();
-          var polymerValid = !el.validate || el.validate();
-          if (!nativeValid || !polymerValid) {
-             return false;
+          // This is weird to appease the compiler. We assume the custom element
+          // has a validate() method, otherwise we can't check it.
+          var validatable = /** @type {{validate: (function() : boolean)}} */ (el);
+          if (validatable.validate) {
+            valid = !!validatable.validate() && valid;
           }
         }
-        return true;
-      }
+        return valid;
+      },
 
       /**
        * Submits the form.
        */
-      submit() {
+      submit: function() {
+        // We are not using this form for submission, so always cancel its event.
+        if (event)
+          event.preventDefault();
+
         if (!this.validate()) {
           return;
         }
 
+        // Remove any existing children in the submission form (from a previous submit).
+        while (this.$.helper.children.length !== 0) {
+          this.$.helper.removeChild(this.$.helper.children[0]);
+        }
+
         var json = this.serializeForm();
-        this._makeAjaxRequest(json);
-      }
+
+        // If we want a redirect, submit the form natively.
+        if (this.allowRedirect) {
+          // If we're submitting the form natively, then create a hidden element for
+          // each of the values.
+          for (element in json) {
+            this.$.helper.appendChild(this._createHiddenElement(element, json[element]));
+          }
+          this.$.helper.submit();
+          this.fire('iron-form-submit');
+        } else {
+          this._makeAjaxRequest(json);
+        }
+      },
 
       /**
        * Resets the form to the default values.
        */
-      reset() {
+      reset: function() {
+        if (event)
+          event.preventDefault();
+
         var nodes = this._getFormElements();
 
         for (var i = 0; i < nodes.length; i++) {
@@ -186,14 +230,14 @@ event and do your own custom submission:
             node.checked = defaults.checked;
           }
         }
-      }
+      },
 
       /**
        * Serializes the form as will be used in submission.
        * @return {Object} An object containing name-value pairs for elements that
        *                  would be submitted.
        */
-      serializeForm() {
+      serializeForm: function() {
         // Only elements that have a `name` and are not disabled are submittable.
         var elements = this._getSubmittableElements();
         var json = {};
@@ -204,38 +248,48 @@ event and do your own custom submission:
           }
         }
         return json;
-      }
+      },
 
-      _handleFormResponse(event) {
+      _handleFormResponse: function(event) {
         this.fire('iron-form-response', event.detail);
-      }
+      },
 
-      _handleFormError(event) {
+      _handleFormError: function(event) {
         this.fire('iron-form-error', event.detail);
-      }
+      },
 
-      _handleTap(event) {
-        if (event.target.getAttribute("type") === "submit") {
-          this.submit()
+      _makeAjaxRequest: function(json) {
+        // Initialize the iron-ajax element if we haven't already.
+        if (!this.ajax) {
+          this.ajax = document.createElement('iron-ajax');
+          this.ajax.addEventListener('response', this._handleFormResponse.bind(this));
+          this.ajax.addEventListener('error', this._handleFormError.bind(this));
         }
-      }
 
-      _makeAjaxRequest(json) {
-        if (this.method.toUpperCase() === 'GET') {
-          this.params = json;
+        // Native forms can also index elements magically by their name (can't make
+        // this up if I tried) so we need to get the correct attributes, not the
+        // elements with those names.
+        this.ajax.url = this._form.getAttribute('action');
+        this.ajax.method = this._form.getAttribute('method');
+        this.ajax.contentType = this._form.getAttribute('enctype');
+        this.ajax.withCredentials = this.withCredentials;
+        this.ajax.headers = this.headers;
+
+        if (this.ajax.method.toUpperCase() === 'GET') {
+          this.ajax.params = json;
         } else {
-          this.body = json;
+          this.ajax.body = json;
         }
 
         // Allow for a presubmit hook
         var event = this.fire('iron-form-presubmit', {}, {cancelable: true});
         if(!event.defaultPrevented) {
-          this.generateRequest();
+          this.ajax.generateRequest();
           this.fire('iron-form-submit', json);
         }
-      }
+      },
 
-      _getValidatableElements() {
+      _getValidatableElements: function() {
         var nodes = this._getFormElements();
         var validatable = [];
 
@@ -246,10 +300,10 @@ event and do your own custom submission:
           }
         }
         return validatable;
-      }
+      },
 
-      _getFormElements(rootSlot) {
-        if (!rootSlot) rootSlot = this.$.slot;
+      _getFormElements: function(rootSlot) {
+        if (!rootSlot) rootSlot = this.$.content;
         if (!rootSlot.__formListener) {
           rootSlot.__formListener = () => this._saveDefaultValues(rootSlot);
           rootSlot.__formListener();
@@ -257,7 +311,11 @@ event and do your own custom submission:
         }
         var result = [];
         var addElement = el => {
-          if (el.tagName === "SLOT") {
+          if (el !== this._form && el.tagName === "FORM") {
+            this._form = el;
+            this._form.addEventListener('submit', this.submit.bind(this));
+            this._form.addEventListener('reset', this.reset.bind(this));
+          } else if (el.tagName === "SLOT") {
             var additionalElements = this._getFormElements(el);
             result.push.apply(result, additionalElements);
           } else {
@@ -275,9 +333,9 @@ event and do your own custom submission:
           }
         }
         return result;
-      }
+      },
 
-      _getSubmittableElements() {
+      _getSubmittableElements: function() {
         var nodes = this._getFormElements();
         var submittable = [];
 
@@ -315,9 +373,9 @@ event and do your own custom submission:
           }
         }
         return submittable;
-      }
+      },
 
-      _serializeElementValues(element) {
+      _serializeElementValues: function(element) {
         // We will assume that every custom element that needs to be serialized
         // has a `value` property, and it contains the correct value.
         // The only weird one is an element that implements IronCheckedElementBehaviour,
@@ -362,9 +420,9 @@ event and do your own custom submission:
             return [];
           return [element.value];
         }
-      }
+      },
 
-      _serializeSelectValues(element) {
+      _serializeSelectValues: function(element) {
         var values = [];
 
         // A <select multiple> has an array of options, some of which can be selected.
@@ -374,9 +432,9 @@ event and do your own custom submission:
           }
         }
         return values;
-      }
+      },
 
-      _serializeInputValues(element) {
+      _serializeInputValues: function(element) {
         // Most of the inputs use their 'value' attribute, with the exception
         // of radio buttons, checkboxes and file.
         var type = element.type.toLowerCase();
@@ -388,9 +446,17 @@ event and do your own custom submission:
           return [];
         }
         return [element.value];
-      }
+      },
 
-      _addSerializedElement(json, name, value) {
+      _createHiddenElement: function(name, value) {
+        var input = document.createElement("input");
+        input.setAttribute("type", "hidden");
+        input.setAttribute("name", name);
+        input.setAttribute("value", value);
+        return input;
+      },
+
+      _addSerializedElement: function(json, name, value) {
         // If the name doesn't exist, add it. Otherwise, serialize it to
         // an array,
         if (!json[name]) {
@@ -402,7 +468,6 @@ event and do your own custom submission:
           json[name].push(value);
         }
       }
-    }
-    customElements.define(IronForm.is, IronForm);
+    });
   </script>
 </dom-module>

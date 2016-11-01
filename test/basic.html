@@ -27,61 +27,77 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <test-fixture id="serialization">
     <template>
       <div>
-        <iron-form id="native-checkboxes" url="/get" method="get">
-          <input type="checkbox" name="check1[]" checked> <!-- default value is "on" -->
-          <input type="checkbox" name="check1[]" value="1">
-          <input type="checkbox" name="check1[]" value="2" checked>
-          <input type="checkbox" name="check2" value="3" checked>
-          <input type="checkbox" name="check3" value="4">
+        <iron-form id="native-checkboxes">
+          <form action="/get" method="get">
+            <input type="checkbox" name="check1[]" checked> <!-- default value is "on" -->
+            <input type="checkbox" name="check1[]" value="1">
+            <input type="checkbox" name="check1[]" value="2" checked>
+            <input type="checkbox" name="check2" value="3" checked>
+            <input type="checkbox" name="check3" value="4">
+          </form>
         </iron-form>
-        <iron-form id="native-radios" url="/get" method="get">
-          <input type="radio" name="radio1" checked> <!-- default value is "on" -->
-          <input type="radio" name="radio1" value="1">
-          <input type="radio" name="radio2" value="2" checked>
-          <input type="radio" name="radio2" value="3" checked> <!-- it's a radio group -->
-          <input type="radio" name="radio3" value="4">
+        <iron-form id="native-radios">
+          <form action="/get" method="get">
+            <input type="radio" name="radio1" checked> <!-- default value is "on" -->
+            <input type="radio" name="radio1" value="1">
+            <input type="radio" name="radio2" value="2" checked>
+            <input type="radio" name="radio2" value="3" checked> <!-- it's a radio group -->
+            <input type="radio" name="radio3" value="4">
+          </form>
         </iron-form>
-        <iron-form id="native-buttons" url="/get" method="get">
-          <input type="reset" name="reset1" value="reset"></input>
-          <input type="submit" name="submit1" value="submit"></input>
-          <button name="button1" value="button">text</button>
+        <iron-form id="native-buttons">
+          <form action="/get" method="get">
+            <input type="reset" name="reset1" value="reset"></input>
+            <input type="submit" name="submit1" value="submit"></input>
+            <button name="button1" value="button">text</button>
+          </form>
         </iron-form>
-        <iron-form id="native-selects" url="/get" method="get">
-          <select name="select1" multiple>
-            <option value="1" selected>A</option>
-            <option value="2" selected>B</option>
-            <option value="3">C</option>
-          </select>
-          <select name="select2">
-            <option value="1" selected>A</option>
-            <option value="2">B</option>
-          </select>
+        <iron-form id="native-selects">
+          <form action="/get" method="get">
+            <select name="select1" multiple>
+              <option value="1" selected>A</option>
+              <option value="2" selected>B</option>
+              <option value="3">C</option>
+            </select>
+            <select name="select2">
+              <option value="1" selected>A</option>
+              <option value="2">B</option>
+            </select>
+          </form>
         </iron-form>
-        <iron-form id="native-inputs" url="/get" method="get">
-          <input type="text" name="input1">
-          <input type="text" name="input1" value="foo">
-          <input type="text" name="input1" value="zag">
-          <input type="text" name="input2" value="bar">
-          <input type="password" name="pass1" value="pass">
-          <input type="number" name="number1" value="35">
+        <iron-form id="native-inputs">
+          <form action="/get" method="get">
+            <input type="text" name="input1">
+            <input type="text" name="input1" value="foo">
+            <input type="text" name="input1" value="zag">
+            <input type="text" name="input2" value="bar">
+            <input type="password" name="pass1" value="pass">
+            <input type="number" name="number1" value="35">
+          </form>
         </iron-form>
-        <iron-form id="native-inputs-empty" url="/get" method="get">
-          <input type="text" name="input1">
+        <iron-form id="native-inputs-empty">
+          <form action="/get" method="get">
+            <input type="text" name="input1">
+          </form>
         </iron-form>
-        <iron-form id="custom-checkboxes" url="/get" method="get">
-          <paper-checkbox name="check1" checked></paper-checkbox> <!-- default value is "on" -->
-          <paper-checkbox name="check1" value="1"></paper-checkbox>
-          <paper-checkbox name="check1" value="2" checked></paper-checkbox>
-          <paper-checkbox name="check2" value="3" checked></paper-checkbox>
-          <paper-checkbox name="check3" value="4"></paper-checkbox>
+        <iron-form id="custom-checkboxes">
+          <form action="/get" method="get">
+            <paper-checkbox name="check1" checked></paper-checkbox> <!-- default value is "on" -->
+            <paper-checkbox name="check1" value="1"></paper-checkbox>
+            <paper-checkbox name="check1" value="2" checked></paper-checkbox>
+            <paper-checkbox name="check2" value="3" checked></paper-checkbox>
+            <paper-checkbox name="check3" value="4"></paper-checkbox>
+          </form>
         </iron-form>
-        <iron-form id="custom-inputs" url="/get" method="get">
-          <paper-input name="input1[]"></paper-input>
-          <paper-input value="foo" name="input1[]"></paper-input>
-          <paper-input value="zag" name="input1[]"></paper-input>
-          <paper-input value="bar" name="input2"></paper-input>
-          <paper-input value="pass" type="password" name="pass1"></paper-input>
-          <paper-input value="35" type="number" name="number1"></paper-input>
+        <iron-form id="custom-inputs">
+          <form action="/get" method="get">
+            <paper-input name="input1[]"></paper-input>
+            <paper-input value="foo" name="input1[]"></paper-input>
+            <paper-input value="zag" name="input1[]"></paper-input>
+            <paper-input value="bar" name="input2"></paper-input>
+            <paper-input value="pass" type="password" name="pass1"></paper-input>
+            <paper-input value="35" type="number" name="number1"></paper-input>
+          </form>
         </iron-form>
       </div>
     </template>
@@ -90,24 +106,34 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <test-fixture id="validation">
     <template>
       <div>
-        <iron-form id="native-required" url="/get" method="get">
-          <input required>
+        <iron-form id="native-required" >
+          <form action="/get" method="get">
+            <input required>
+          </form>
         </iron-form>
 
-        <iron-form id="required-novalidate" novalidate url="/get" method="get">
-          <input required>
+        <iron-form id="required-novalidate">
+          <form action="/get" method="get" novalidate>
+            <input required>
+          </form>
         </iron-form>
 
-        <iron-form id="native-invalid" url="/get" method="get">
-          <input pattern="aa" value="b">
+        <iron-form id="native-invalid" >
+          <form action="/get" method="get">
+            <input pattern="aa" value="b">
+          </form>
         </iron-form>
 
-        <iron-form id="custom-required" url="/get" method="get">
-          <paper-input required></paper-input>
+        <iron-form id="custom-required" >
+          <form action="/get" method="get">
+            <paper-input required></paper-input>
+          </form>
         </iron-form>
 
-        <iron-form id="custom-invalid" url="/get" method="get">
-          <paper-input value="b" pattern="aa"></paper-input>
+        <iron-form id="custom-invalid" >
+          <form action="/get" method="get">
+            <paper-input value="b" pattern="aa"></paper-input>
+          </form>
         </iron-form>
       </div>
     </template>
@@ -115,31 +141,35 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   <test-fixture id="submission">
     <template>
-      <iron-form url="/get" method="get">
-        <div>
-          <input type="checkbox" name="check1" checked>
-          <input type="submit">
-          <input type="button">
-          <paper-button></paper-button>
-        </div>
+      <iron-form>
+        <form action="/get" method="get" enctype="application/json">
+          <div>
+            <input type="checkbox" name="check1" checked>
+            <input type="submit">
+            <input type="button">
+            <paper-button></paper-button>
+          </div>
+        </form>
       </iron-form>
     </template>
   </test-fixture>
 
   <test-fixture id="resetting">
     <template>
-      <iron-form url="/get" method="get">
-        <input type="input" name="input1" value="input1">
-        <input type="input" name="input2">
-        <input type="checkbox" name="check1" checked>
-        <input type="checkbox" name="check2">
-        <input type="radio" name="radio1" checked>
-        <input type="radio" name="radio2">
-        <paper-checkbox name="papercheck1" checked></paper-checkbox>
-        <paper-checkbox name="papercheck2"></paper-checkbox>
-        <paper-input value="paper1" name="paper1"></paper-input>
-        <paper-input value="" name="paper2"></paper-input>
-        <input type="reset">
+      <iron-form>
+        <form action="/get" method="get">
+          <input type="input" name="input1" value="input1">
+          <input type="input" name="input2">
+          <input type="checkbox" name="check1" checked>
+          <input type="checkbox" name="check2">
+          <input type="radio" name="radio1" checked>
+          <input type="radio" name="radio2">
+          <paper-checkbox name="papercheck1" checked></paper-checkbox>
+          <paper-checkbox name="papercheck2"></paper-checkbox>
+          <paper-input value="paper1" name="paper1"></paper-input>
+          <paper-input value="" name="paper2"></paper-input>
+          <input type="reset">
+        </form>
       </iron-form>
     </template>
   </test-fixture>
@@ -330,7 +360,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         // Wait one tick for observeNodes.
         Polymer.Base.async(function() {
-          debugger;
           expect(form.validate()).to.be.equal(false);
           form.submit();
           server.respond();
@@ -458,9 +487,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         }, 1);
       });
 
-      test('content-type and headers works', function(done) {
+      test('enctype, headers and withCredentials works', function(done) {
         form.addEventListener('iron-form-response', function(event) {
-          var xhr = event.detail.xhr;
+          var xhr = server.requests[0];
           expect(xhr.withCredentials).to.be.true;
           var headers = xhr.requestHeaders;
           expect(headers['content-type']).to.be.equal('application/json');
@@ -468,9 +497,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           done();
         });
 
-         form.contentType = 'application/json';
-         form.headers = {'x-some': 'header-value'};
-         form.withCredentials = true;
+        // enctype is set in template
+        form.headers = {'x-some': 'header-value'};
+        form.withCredentials = true;
 
         // Wait one tick for observeNodes.
         Polymer.Base.async(function() {
@@ -487,7 +516,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         // Wait one tick for observeNodes.
         Polymer.Base.async(function() {
-          form.$.slot.assignedNodes()
+          form.$.content.assignedNodes()
             .find((n) => n.nodeType === Node.ELEMENT_NODE)
             .querySelector('input[type=submit]').click();
           server.respond();
@@ -502,7 +531,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         // Wait one tick for observeNodes.
         Polymer.Base.async(function() {
-          var button = form.$.slot.assignedNodes()
+          var button = form.$.content.assignedNodes()
             .find((n) => n.nodeType === Node.ELEMENT_NODE)
             .querySelector('input[type=button]');
           button.addEventListener('click', function() {
@@ -522,7 +551,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         // Wait one tick for observeNodes.
         Polymer.Base.async(function() {
-          var button = form.$.slot.assignedNodes()
+          var button = form.$.content.assignedNodes()
             .find((n) => n.nodeType === Node.ELEMENT_NODE)
             .querySelector('paper-button');
           button.addEventListener('click', function() {
@@ -590,24 +619,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       test('submits a form', function(done) {
         var form = document.createElement('iron-form');
-        form.url = '/get';
-        form.method = 'get';
-
+        var nativeForm = document.createElement('form');
+        nativeForm.action = '/get';
+        nativeForm.method = 'get';
         var input = document.createElement('input');
-        form.appendChild(input);
+        nativeForm.appendChild(input);
         input.required = true;
         input.name = 'foo';
-
+        form.appendChild(nativeForm);
         // Need to add to the document so observeNodes runs.
         document.body.appendChild(form);
-
         form.addEventListener('iron-form-response', function(event) {
           expect(event.detail.url).to.equal('/get?foo=bar');
           expect(event.detail.response.success).to.be.equal(true);
           document.body.removeChild(form);
           done();
         });
-
         // Wait one tick for observeNodes.
         Polymer.Base.async(function() {
           expect(form.validate()).to.be.equal(false);

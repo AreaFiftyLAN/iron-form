@@ -24,9 +24,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <body>
   <dom-module id="slotted-form">
     <template>
-      <iron-form id="form" url="/get" method="get">
-        <input name="original" value="works" />
-        <slot name="inputs"></slot>
+      <iron-form id="form">
+        <form action="/get" method="get">
+          <input name="original" value="works" />
+          <slot name="inputs"></slot>
+        </form>
       </iron-form>
     </template>
     <script>
