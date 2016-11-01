@@ -183,7 +183,7 @@ attach it to the `<iron-form>`:
       /**
        * Submits the form.
        */
-      submit: function() {
+      submit: function(event) {
         // We are not using this form for submission, so always cancel its event.
         if (event)
           event.preventDefault();
@@ -216,7 +216,7 @@ attach it to the `<iron-form>`:
       /**
        * Resets the form to the default values.
        */
-      reset: function() {
+      reset: function(event) {
         if (event)
           event.preventDefault();
 
